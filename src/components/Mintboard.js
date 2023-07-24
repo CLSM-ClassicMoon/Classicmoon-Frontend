@@ -35,8 +35,8 @@ const Mintboard = () => {
 
   const [balance1, setBalance1] = useState(0);
   const [balance2, setBalance2] = useState(0);
-  const [value1, setValue1] = useState('');
-  const [value2, setValue2] = useState('');
+  const [value1, setValue1] = useState(undefined);
+  const [value2, setValue2] = useState(undefined);
   const [fromImg, setFromImg] = useState("img/icon/lunc.png");
   const [toImg, setToImg] = useState("img/icon/clsm.png");
   const [from, setFrom] = useState("LUNC");
@@ -186,7 +186,11 @@ const Mintboard = () => {
 
         console.log(txResult);
       } catch (e) {
-        console.log(e);
+        if (e.response.data.message.startsWith("200 Billion LIMIT")) {
+          toast.error("CLSM Circulation Supply is not less than 200B.");
+        } else {
+          console.log(e);
+        }
       }
     })();
   };

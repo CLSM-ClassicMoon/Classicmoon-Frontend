@@ -46,27 +46,35 @@ const Swapboard = () => {
 
   useEffect(() => {
     (async () => {
-      if (walletAddress) {
+      try {
+        if (walletAddress) {
 
-        let balance;
+          let balance;
 
-        // CLSM tokens balance
-        balance = await getTokenBalance(constants.TOKEN_CONTRACT_ADDRESS, walletAddress);
-        setBalance1(balance);
+          // CLSM tokens balance
+          balance = await getTokenBalance(constants.TOKEN_CONTRACT_ADDRESS, walletAddress);
+          setBalance1(balance);
 
-        // LUNC tokens balance
-        balance = await getNativeBalance(walletAddress);
-        if (balance.length > 0) {
-          for (let i = 0; i < balance.length; i++) {
-            if (balance[i].denom == 'uluna') {
-              setBalance2(balance[i].amount);
-              break;
+          // LUNC tokens balance
+          balance = await getNativeBalance(walletAddress);
+          if (balance.length > 0) {
+            for (let i = 0; i < balance.length; i++) {
+              if (balance[i].denom == 'uluna') {
+                setBalance2(balance[i].amount);
+                break;
+              }
             }
           }
+        } else {
+          setValue1(undefined);
+          setValue2(undefined);
         }
-      } else {
-        setValue1(undefined);
-        setValue2(undefined);
+      } catch (e) {
+        if (e.message == "Network Error") {
+          toast.error(e.message);
+          return;
+        }
+        console.log(e);
       }
     })()
   }, [walletAddress]);
@@ -164,6 +172,10 @@ const Swapboard = () => {
             setValue2(simulation.return_amount);
           }
         } catch (e) {
+          if (e.message = "Network Error") {
+            toast.error(e.message);
+            return;
+          }
           console.log(e);
         }
       })();
@@ -212,6 +224,10 @@ const Swapboard = () => {
             setValue1(simulation.offer_amount);
           }
         } catch (e) {
+          if (e.message = "Network Error") {
+            toast.error(e.message);
+            return;
+          }
           console.log(e);
         }
       })();
@@ -271,8 +287,12 @@ const Swapboard = () => {
               }
             );
 
+            let gasPrice = await loadGasPrice('uluna');
+
             let txOptions = {
-              msgs: [msg]
+              msgs: [msg],
+              memo: undefined,
+              gasPrices: `${gasPrice}uluna`
             };
 
             // Signing
@@ -280,6 +300,13 @@ const Swapboard = () => {
               [{ address: walletAddress }],
               txOptions
             );
+
+            const taxRate = await loadTaxRate()
+            const taxCap = await loadTaxInfo('uluna');
+            let tax = calcTax(0, taxCap, taxRate)
+
+            let fee = signMsg.auth_info.fee.amount.add(new Coin('uluna', tax));
+            txOptions.fee = new Fee(signMsg.auth_info.fee.gas_limit, fee)
 
             // Broadcast SignResult
             const txResult = await wallet.post(
@@ -344,6 +371,13 @@ const Swapboard = () => {
           setIsDisabledSwap(false);
         }
       } catch (e) {
+
+        setIsDisabledSwap(false);
+
+        if (e.message = "Network Error") {
+          toast.error(e.message);
+          return;
+        }
         console.log(e);
       }
     })();
@@ -374,7 +408,7 @@ const Swapboard = () => {
           <div className="tw-text-white tw-flex tw-justify-between tw-items-center tw-px-[16px] tw-pt-[16px]">
             <div className="tw-text-[24px] tw-px-[12px] tw-border-[1px] tw-border-solid tw-border-[#13214d] tw-rounded-[5px]">Swap</div>
             <div>
-              <button style={{ background: 'transparent' }} className="tw-border-0" onClick={handleSetting}><img id="img-setting" src="img/icon-settings.svg"></img></button>
+              {/* <button style={{ background: 'transparent' }} className="tw-border-0" onClick={handleSetting}><img id="img-setting" src="img/icon-settings.svg"></img></button> */}
               <button style={{ background: 'transparent' }} className="tw-border-0 tw-ml-3" onClick={handleReload}><img id="img-reload" src="img/icon-reload.svg"></img></button>
             </div>
           </div>

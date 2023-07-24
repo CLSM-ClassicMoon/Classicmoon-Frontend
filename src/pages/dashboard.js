@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getConstants } from '../context/constants';
 import { useContract } from '../context/useContract';
-import useAddress from '../context/useAddress';
 import { numberWithCommas } from '../utils/utils';
 import Chart from 'chart.js/auto'
 
@@ -54,11 +53,9 @@ const Dashboard = () => {
         setBurnt(balance);
 
         let treasury = await getTokenBalance(constants.TOKEN_CONTRACT_ADDRESS, constants.TREASURY_WALLET_ADDRESS);
-        console.log(treasury);
-        setCirculationSupply(6800000000000000000 - treasury - balance);
+        setCirculationSupply(parseInt(data.total_supply) - treasury - balance);
 
         const dynamicInfo = await getDynamicMint(constants.DYNAMIC_CONTRACT_ADDRESS);
-        console.log(dynamicInfo);
         setLuncBurnt(dynamicInfo.total_lunc_burn_amount);
         setUstcBurnt(dynamicInfo.total_ustc_burn_amount);
         setCLSMMinted(dynamicInfo.total_minted_clsm_amount);
